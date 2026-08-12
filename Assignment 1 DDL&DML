@@ -5,7 +5,7 @@ use School;
 create table Student (
 sid varchar(10) primary key,
 sname varchar(50),
-sage int(3),
+sage int,
 semail varchar(100) unique
 );
 
@@ -29,16 +29,21 @@ rename table Student to Students;
 alter table Course drop column cduration;
 
 #7
+alter table Students modify column sage smallint check(sage>=18);
+
+#8
+
 
 #DML
 #1 Insert 5 records into the Students table
 describe Students;
+select * from Students;
 insert into Students values
-('s01','Raman',15,'raman12@gmail.com','9566783456'),
+('s01','Raman',20,'raman12@gmail.com','9566783456'),
 ('s02','Raj',18,'raj81@yahoo.com','8755946738'),
-('s03','Vicky',16,'Vicky123@gmail.com','7590805048'),
+('s03','Vicky',23,'Vicky123@gmail.com','7590805048'),
 ('s04','Anil',19,'anil2002@hotmail.com','9400037859'),
-('s05','Sumit',16,'sumit80@gamil.com','8493068848');
+('s05','Sumit',20,'sumit80@gamil.com','8493068848');
 
 describe Course;
 #2 Insert values in table Course
@@ -70,7 +75,11 @@ delete from Students where sid='s05';
 
 select * from Students;
 
-#8 Display students whose age is greater than 17
-select * from Students where sage>17; 
+#8 Display students whose age is greater than 20
+select * from Students where sage>20; 
 
-#9 
+#9 Display students sorted by age in descending order
+select * from Students order by sage desc;
+
+#10 Display only the first 3 records from Students
+select * from Students limit 3;
