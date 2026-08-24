@@ -32,7 +32,22 @@ alter table Course drop column cduration;
 alter table Students modify column sage smallint check(sage>=18);
 
 #8
+alter table Course modify column cid varchar(10) unique;
+create table Employee(
+cid VARCHAR(10),
+foreign key(cid)
+references Course(cid)
+);
 
+#9
+show create table employee;
+alter table employee
+drop foreign key employee_ibfk_1;
+
+#10
+delete from employee;
+
+set sql_safe_updates = 0;
 
 #DML
 #1 Insert 5 records into the Students table
@@ -65,7 +80,6 @@ update Students set semail='Vick99@hotmail.com' where sid='s03';
 select sname, semail from Students;
 
 #6 Increase age of all students by 1 year
-set sql_safe_updates=0;
 update Students set sage=sage+1;
 
 select * from Students; 
