@@ -116,3 +116,106 @@ where Dates < ('2024-01-10')
 select * from calender;
 
 #16
+with recursive employee_sales as (
+    
+    select
+        sale_id,
+        employee,
+        sale_date,
+        sale_amount,
+        sale_amount as cumulative_sales
+    from sales
+    where sale_id in (
+        select min(sale_id)
+        from sales
+        group by employee
+    )
+
+    union all
+    
+    select
+        s.sale_id,
+        s.employee,
+        s.sale_date,
+        s.sale_amount,
+        es.cumulative_sales + s.sale_amount
+    from employee_sales es
+    join sales s
+        on s.employee = es.employee
+       and s.sale_date > es.sale_date
+    where s.sale_date = (
+        select min(s2.sale_date)
+        from sales s2
+        where s2.employee = es.employee
+		and s2.sale_date > es.sale_date
+    )
+)
+
+select *
+from employee_sales
+order by employee, sale_date;
+
+#17
+with average_sales as 
+(
+	select employee, avg(sale_amount) as average_sale from sales
+    group by employee
+),
+
+sales_above_avg as 
+(
+	select s.employee, sale_date, s.sale_amount, average_sale from sales s
+    join average_sales ag on s.employee = ag.employee
+    where sale_amount > average_sale
+)
+select * from sales_above_avg
+order by employee, sale_date;
+
+#18
+with ordered_sales as 
+(
+	select *, row_number() 
+	over(order by sale_amount desc) as sale_rank 
+	from sales
+),
+top_3 as
+(
+select * from ordered_sales
+where sale_rank <=3
+)
+
+select * from top_3;
+
+INSERT INTO sales VALUES
+(10, 'John', 'North', 1000, '2024-02-02'),
+(11, 'Emma', 'South', 1200, '2024-02-10'),
+(12, 'Mike', 'East', 600, '2024-02-15'),
+
+(13, 'John', 'North', 1500, '2024-03-03'),
+(14, 'Emma', 'South', 800, '2024-03-08'),
+(15, 'Mike', 'East', 700, '2024-03-20'),
+
+(16, 'John', 'North', 900, '2024-04-05'),
+(17, 'Emma', 'South', 1800, '2024-04-12'),
+(18, 'Mike', 'East', 500, '2024-04-25');
+
+select date_format(sale_date, '%Y-%m') as months,
+sum(sale_amount) as sale from sales
+group by months;
+
+#19
+with monthly_sales as 
+(
+	select date_format(sale_date, '%Y-%m') as months,
+	sum(sale_amount) as sale from sales
+	group by months
+),
+monthly_top as
+(
+	select * from monthly_sales
+    order by sale desc
+    limit 1
+)
+
+select * from monthly_top;
+
