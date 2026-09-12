@@ -142,3 +142,63 @@ group by a.customer_id, c.name;
 #4
 select * from transactions
 where account_id = 2;
+
+#5
+select c.name, t.account_id, sum(t.amount) as total_deposit from transactions t
+join accounts a on t.account_id=a.account_id
+join customers c on a.customer_id = c.customer_id
+where type = 'Deposit'
+group by account_id, name
+order by total_deposit desc;
+
+#6
+select * , 
+round((loan_amount*interest_rate)/100,2) as loan_interest 
+from loans;
+
+#7
+select a.account_id, c.* from accounts a
+left join transactions t on a.account_id = t.account_id
+left join customers c on a.customer_id = c.customer_id
+where t.account_id is null;
+
+#8
+delimiter ??
+create trigger withdraw
+before insert on transactions
+for each row
+begin
+	if new.type = 'Withdraw' then
+		if(
+			select balance from accounts
+            where new.account_id = account_id) < new.amount then
+            signal sqlstate '45000'
+            set message_text = 'Not Enough Balance';
+		end if;
+	end if;
+end ?? delimiter ;
+
+insert into transactions (account_id, type, amount, transaction_date)
+value (7, 'Withdraw', 90000.00, '2026-06-12');
+
+select * from transactions;
+
+#9
+delimiter >>
+create procedure transfer(in amt decimal(12,2), in wacc int, in dacc int)
+begin
+	start transaction;
+    update accounts
+    set balance = balance - amt
+    where account_id = wacc;
+    
+    update accounts
+    set balance = balance + amt
+    where account_id = dacc;
+    
+	insert into transactions (account_id, type, amount, transaction_date)
+    values (wacc, 'Withdraw', amt, curdate()),
+    (dacc, 'Deposit', amt, curdate());
+    
+    commit;
+end >> delimiter ;
