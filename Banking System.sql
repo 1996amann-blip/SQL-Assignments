@@ -187,6 +187,30 @@ select * from transactions;
 delimiter >>
 create procedure transfer(in amt decimal(12,2), in wacc int, in dacc int)
 begin
+	if wacc = dacc then
+		signal sqlstate '45000'
+        set message_text = "Sender and Receiver can't be the same";
+	end if;
+    
+    if not exists
+    (
+		select 1 from accounts
+        where account_id = wacc
+        and balance >= amt
+    ) then
+		signal sqlstate '45000'
+        set message_text = "Insufficient Balance";
+	end if;
+    
+    if not exists (
+        select 1
+        from accounts
+        where account_id = dacc
+    ) then
+        signal sqlstate '45000'
+        set message_text = 'Receiver account does not exist';
+    end if;
+
 	start transaction;
     update accounts
     set balance = balance - amt
@@ -202,3 +226,27 @@ begin
     
     commit;
 end >> delimiter ;
+
+call transfer(50000, 7, 11);
+
+call transfer(5000, 7, 7);
+
+call transfer(5000, 7, 99);
+
+select * from accounts;
+
+call transfer(25000, 1, 2);
+
+select * from customers;
+select * from accounts;
+
+#10
+create view customer_financial_summary as
+(
+	select c.*, a.account_id, a.balance, a.account_type, sum(a.balance) 
+    over(partition by a.customer_id order by a.customer_id desc) as total_balance
+    from customers c left join accounts a 
+    on c.customer_id = a.customer_id
+);
+
+select * from customer_financial_summary;
