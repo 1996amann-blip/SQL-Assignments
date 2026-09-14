@@ -197,3 +197,60 @@ from products p join order_items oi on p.product_id = oi.product_id
 group by product_id
 order by quantity_sold desc
 limit 1;
+
+#6
+select c.category_name, sum(oi.quantity) as quantity_sold, sum(p.price*oi.quantity) as revenue from categories c
+left join products p on c.category_id = p.category_id
+left join order_items oi on p.product_id = oi.product_id
+group by c.category_id;
+
+#7
+select u.* from users u
+left join orders o on u.user_id = o.user_id
+where o.user_id is null;
+
+#8
+select * from order_items;
+select * from products;
+
+delimiter ||
+create trigger inventory
+after insert on order_items
+for each row
+begin
+	update products set stock = stock-new.quantity
+    where product_id = new.product_id;
+end || delimiter ;
+
+insert into order_items (order_id, product_id, quantity)
+values (1, 1, 2);
+
+#9
+select * from orders;
+select * from order_items;
+
+delimiter >>
+create procedure place_order(in u_id int, in p_id int, in purchase_quantity int)
+begin
+	declare new_order_id int;
+    
+	insert into orders (user_id, order_date, status)
+    value (u_id, curdate(), "Placed");
+    
+    set new_order_id = last_insert_id();
+    
+    insert into order_items (order_id, product_id, quantity)
+    value (new_order_id, p_id, purchase_quantity);
+end >> delimiter ;
+
+select * from payments;
+
+call place_order(4, 2, 5);
+
+#10
+select category_name, p.name, p.price, 
+sum(quantity) as sold_quantity, 
+sum(oi.quantity*p.price) as revenue from categories c
+right join products p on p.category_id = c.category_id
+left join order_items oi on p.product_id = oi.product_id
+group by p.product_id, p.name;
